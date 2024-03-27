@@ -3,7 +3,7 @@
 Implementation will be available soon.
 
 ## Paper Links
-[![arXiv](https://img.shields.io/badge/arXiv-1234.56789-b31b1b.svg?style=flat)](https://arxiv.org/abs/1234.56789) 
+[![arXiv](https://img.shields.io/badge/arXiv-2403.17647-b31b1b.svg?style=flat)](https://arxiv.org/abs/2403.17647)
 [![Generic badge](https://img.shields.io/badge/LREC_COLING-COMING_SOON-GREEN.svg)](https://shields.io/)
 
 ## Approach
