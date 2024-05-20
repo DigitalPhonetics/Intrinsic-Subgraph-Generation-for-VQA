@@ -1,10 +1,10 @@
 # Intrinsic Subgraph Generation for Interpretable Graph based Visual Question Answering
 
-Implementation will be available soon.
+Eval scripts coming soon.
 
 ## Paper Links
 [![arXiv](https://img.shields.io/badge/arXiv-2403.17647-b31b1b.svg?style=flat)](https://arxiv.org/abs/2403.17647)
-[![Generic badge](https://img.shields.io/badge/LREC_COLING-COMING_SOON-GREEN.svg)](https://shields.io/)
+[![Generic badge](https://img.shields.io/badge/LREC_COLING-Link-GREEN.svg)](https://aclanthology.org/2024.lrec-main.806)
 
 ## Approach
 ![Architecture](./Architecture.jpg)
@@ -45,10 +45,16 @@ python -m spacy download en_core_web_sm
 
 ## Citation
 ```bibtex
-@article{tilli2024intrinsic,
-  title={Intrinsic Subgraph Generation for Interpretable Graph based Visual Question Answering},
-  author={Tilli, Pascal and Vu, Ngoc Thang},
-  journal={arXiv preprint arXiv:2403.17647},
-  year={2024}
+@inproceedings{tilli-vu-2024-intrinsic-subgraph,
+    title = "Intrinsic Subgraph Generation for Interpretable Graph Based Visual Question Answering",
+    author = "Tilli, Pascal  and
+      Vu, Ngoc Thang",
+    booktitle = "Proceedings of the 2024 Joint International Conference on Computational Linguistics, Language Resources and Evaluation (LREC-COLING 2024)",
+    month = may,
+    year = "2024",
+    address = "Torino, Italy",
+    publisher = "ELRA and ICCL",
+    url = "https://aclanthology.org/2024.lrec-main.806",
+    pages = "9204--9223",
 }
 ```
