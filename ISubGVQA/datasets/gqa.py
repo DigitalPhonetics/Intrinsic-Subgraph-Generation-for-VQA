@@ -1,14 +1,16 @@
-import torch
-from torchtext.data.utils import get_tokenizer
+import copy
 import json
-from datasets.scene_graph import GQASceneGraphs
-from torchtext.vocab import GloVe, vocab
+import os
+
+import numpy as np
+import torch
 import torch_geometric
 from torch.nn.utils.rnn import pad_sequence
-import os
-import copy
-import numpy as np
-from transformers import CLIPTokenizer, CLIPModel
+from torchtext.data.utils import get_tokenizer
+from torchtext.vocab import GloVe, vocab
+from transformers import CLIPTokenizerFast, CLIPTokenizer
+
+from .scene_graph import GQASceneGraphs
 
 
 def build_text_vocab(tokenizer):
@@ -41,7 +43,10 @@ def build_text_vocab(tokenizer):
 class GQADataset(torch.utils.data.Dataset):
 
     # tokenizer = get_tokenizer("spacy", language="en_core_web_sm")
-    tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+    tokenizer = CLIPTokenizerFast.from_pretrained(
+        "openai/clip-vit-base-patch32", use_fast=True
+    )
+    print(f"tokenizer.is_fast={tokenizer.is_fast}")
     # if os.path.exists("./data/vocabs/text_vocab.pt"):
     #     print("loading text vocab...")
     #     text_vocab = torch.load("./data/vocabs/text_vocab.pt")
@@ -52,17 +57,29 @@ class GQADataset(torch.utils.data.Dataset):
     #     torch.save(text_vocab, "./data/vocabs/text_vocab.pt")
     # print(f"text vocab size: {len(text_vocab)}")
 
-    ans2label = json.load(open("./meta_info/trainval_ans2label.json"))
-    label2ans = json.load(open("./meta_info/trainval_label2ans.json"))
-
-    assert len(ans2label) == len(label2ans)
-    for ans, label in ans2label.items():
-        assert label2ans[label] == ans
+    try:
+        ans2label = json.load(open("./ISubGVQA/meta_info/trainval_ans2label.json"))
+        label2ans = json.load(open("./ISubGVQA/meta_info/trainval_label2ans.json"))
+        assert len(ans2label) == len(label2ans)
+        for ans, label in ans2label.items():
+            assert label2ans[label] == ans
+    except:
+        ans2label = None
+        label2ans = None
 
     def __init__(
         self,
         split,
+        ans2label_path="./ISubGVQA/meta_info/trainval_ans2label.json",
+        label2ans_path="./ISubGVQA/meta_info/trainval_label2ans.json",
     ):
+        self.ans2label = json.load(open(ans2label_path))
+        self.label2ans = json.load(open(label2ans_path))
+
+        assert len(self.ans2label) == len(self.label2ans)
+        for ans, label in self.ans2label.items():
+            assert self.label2ans[label] == ans
+
         self.split = split
         self.sg_feature_lookup = GQASceneGraphs()  # Using Ground Truth
         # self.stoi = copy.deepcopy(GQADataset.text_vocab.vocab.get_stoi())
@@ -77,12 +94,28 @@ class GQADataset(torch.utils.data.Dataset):
         match split:
             case "train":
                 self.data = json.load(
-                    open("./data/questions/train_balanced_questions.json")
+                    open("./ISubGVQA/data/questions/train_balanced_questions.json")
                 )
             case "valid":
                 self.data = json.load(
-                    open("./data/questions/val_balanced_questions.json")
+                    open("./ISubGVQA/data/questions/val_balanced_questions.json")
                 )
+            case "testdev":
+                self.data = json.load(
+                    open("./ISubGVQA/data/questions/testdev_balanced_questions.json")
+                )
+                self.data = {
+                    key: value
+                    for key, value in self.data.items()
+                    if (
+                        value["imageId"]
+                        in self.sg_feature_lookup.scene_graphs_testdev.keys()
+                    )
+                    and (
+                        self.sg_feature_lookup.scene_graphs_testdev[value["imageId"]]
+                        is not None
+                    )
+                }
 
         self.idx2sampleId = [key for key in list(self.data.keys())]
 
@@ -124,9 +157,9 @@ class GQADataset(torch.utils.data.Dataset):
             question_id,
             scene_graph,
             question_text,
-            None,
+            datum["types"],
             short_answer_label,
-            None,
+            image_id,
         )
 
     def __len__(self):

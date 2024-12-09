@@ -1,16 +1,18 @@
-from torch_geometric.nn.conv import MessagePassing
 from typing import Optional, Tuple, Union
+
 import torch
-from torch_geometric.nn.dense.linear import Linear
-from torch.nn import Parameter
-from torch_geometric.typing import Adj, OptTensor, PairTensor
-from imle.imle import NodemaskToEdgemask
-from .masking import MaskingModel
-from torch_geometric.nn.inits import glorot, zeros
-from torch import Tensor
-from torch_sparse import SparseTensor, set_diag
 import torch.nn.functional as F
+from torch import Tensor
+from torch.nn import Parameter
+from torch_geometric.nn.conv import MessagePassing
+from torch_geometric.nn.dense.linear import Linear
+from torch_geometric.nn.inits import glorot, zeros
+from torch_geometric.typing import Adj, OptTensor, PairTensor
 from torch_geometric.utils import add_self_loops, remove_self_loops, softmax
+from torch_sparse import SparseTensor, set_diag
+
+from ..sampling.node_edge_masks import NodeMaskToEdgeMask
+from .masking import MaskingModel
 
 
 class MaskingGATv2Conv(MessagePassing):
@@ -34,6 +36,12 @@ class MaskingGATv2Conv(MessagePassing):
         use_topk: bool = False,
         concat_instr: bool = False,
         use_all_instrs: bool = False,
+        sampler_type: str = None,
+        sample_k: int = None,
+        nb_samples: int = 1,
+        alpha=1.0,
+        beta=10.0,
+        tau=1.0,
         **kwargs,
     ):
         super().__init__(node_dim=0, **kwargs)
@@ -104,9 +112,18 @@ class MaskingGATv2Conv(MessagePassing):
         self._alpha = None
 
         self.mask = MaskingModel(
-            in_channels, out_channels, masking_threshold, use_topk=use_topk
+            in_channels,
+            out_channels,
+            masking_threshold,
+            use_topk=use_topk,
+            sampler_type=sampler_type,
+            sample_k=sample_k,
+            nb_samples=nb_samples,
+            alpha=alpha,
+            beta=beta,
+            tau=tau,
         )
-        self.masking = NodemaskToEdgemask.apply
+        self.masking = NodeMaskToEdgeMask.apply
 
         self.reset_parameters()
 

@@ -1,13 +1,17 @@
-import torch
-from .scene_graph_encoder import SceneGraphEncoder
-from .question_encoder import QuestionEncoder
-from .question_decoder import QuestionDecoder
-from .mgat import MGAT
-from .att_pooling import GlobalAttention
-from datasets.gqa import GQADataset
-from torchtext.vocab import GloVe
 import copy
+import math
+
+import torch
+from torchtext.vocab import GloVe
 from transformers import CLIPModel
+
+from ..datasets.gqa import GQADataset
+from .att_pooling import GlobalAttention
+from .mgat import MGAT
+from .question_decoder import QuestionDecoder
+from .question_encoder import QuestionEncoder
+from .scene_graph_encoder import SceneGraphEncoder
+from ..sampling.methods.simple_scheme import EdgeSIMPLEBatched
 
 
 class ISubGVQA(torch.nn.Module):
@@ -35,6 +39,7 @@ class ISubGVQA(torch.nn.Module):
         self.interpretable_mode = interpretable_mode
         self.concat_instr = concat_instr
         self.embed_cat = embed_cat
+        self.text_sampling = args.text_sampling
 
         self.general_hidden_dim = args.general_hidden_dim  # 300
         self.scene_graph_encoder = SceneGraphEncoder(
@@ -73,6 +78,21 @@ class ISubGVQA(torch.nn.Module):
             nlayers=4,
             dropout=0.1,
         )
+        if args.text_sampling:
+            self.text_sampler = EdgeSIMPLEBatched(
+                k=args.mgat_layers,
+                device="cuda",
+                policy="edge_candid",
+            )
+            self.qsts_att_keys = torch.nn.Sequential(
+                torch.nn.Linear(hidden_dim, hidden_dim),
+                torch.nn.GELU(),
+            )
+            self.qsts_att_query = torch.nn.Sequential(
+                torch.nn.Linear(hidden_dim, hidden_dim),
+                torch.nn.GELU(),
+            )
+
         self.program_decoder = QuestionDecoder(
             n_instructions=args.mgat_layers,
             ninp=self.text_emb_dim,
@@ -93,6 +113,12 @@ class ISubGVQA(torch.nn.Module):
             use_all_instrs=args.use_all_instrs,
             use_global_mask=args.use_global_mask,
             node_classification=args.node_classification,
+            sampler_type=args.sampler_type,
+            sample_k=args.sample_k,
+            nb_samples=args.nb_samples,
+            alpha=args.alpha,
+            beta=args.beta,
+            tau=args.tau,
         )
 
         ##################################
@@ -151,7 +177,22 @@ class ISubGVQA(torch.nn.Module):
         # Encode questions
         ##################################
         # [ Len, Batch ] -> [ Len, Batch, self.question_hidden_dim ]
+        mask_text = None
         questions_encoded = self.question_encoder(questions, mask=qsts_att_mask)
+        if self.text_sampling:
+            qsts_keys = self.qsts_att_keys(questions_encoded)
+            qsts_queries = self.qsts_att_query(questions_encoded)
+            qsts_logits = torch.bmm(
+                qsts_keys.permute(1, 0, 2), qsts_queries.permute(1, 2, 0)
+            ).sum(-1) / math.sqrt(questions_encoded.size(-1))
+            self.text_sampler.device = qsts_logits.device
+            mask_text, _ = self.text_sampler(
+                qsts_logits.unsqueeze(-1), train=self.training
+            )
+            questions_encoded = (
+                questions_encoded.permute(1, 0, 2) * mask_text.squeeze(0)
+            ).permute(1, 0, 2)
+
         qst_feats = self.program_decoder(memory=questions_encoded)
         mgat_feats_flat = qst_feats.view(
             qst_feats.size(1), int(qst_feats.size(0)), qst_feats.size(2)
@@ -206,4 +247,4 @@ class ISubGVQA(torch.nn.Module):
         if explainer:
             return mgat_logits
 
-        return mgat_logits, imle_mask, mgat_gate, node_logits_layers, None
+        return mgat_logits, imle_mask, mgat_gate, node_logits_layers, mask_text

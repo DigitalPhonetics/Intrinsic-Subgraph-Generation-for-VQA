@@ -1,7 +1,8 @@
 import torch
-from datasets.scene_graph import GQASceneGraphs
 import torch_geometric
 from torch_scatter import scatter_mean
+
+from ..datasets.scene_graph import GQASceneGraphs
 
 
 class SceneGraphEncoder(torch.nn.Module):
@@ -96,9 +97,9 @@ class SceneGraphEncoder(torch.nn.Module):
         )
 
         save_type = x_encoded.dtype
-        x_encoded = x_encoded.type(torch.DoubleTensor).cuda()
-        x_encoded = self.graph_layer_norm(x_encoded, batch.cuda())
-        x_encoded = x_encoded.type(save_type).cuda()
+        x_encoded = x_encoded.type(torch.DoubleTensor).to(device=x.device)
+        x_encoded = self.graph_layer_norm(x_encoded, batch.to(device=x.device))
+        x_encoded = x_encoded.type(save_type).to(device=x.device)
 
         return x_encoded, edge_attr_encoded
 

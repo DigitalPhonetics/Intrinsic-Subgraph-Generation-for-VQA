@@ -1,15 +1,34 @@
 import time
+import argparse
 
 import torch
 from torch.nn.parallel import DistributedDataParallel
 
-from utils.accuracies import accuracy
+from ..utils.accuracies import accuracy
+from ..utils.avg_meter import AverageMeter
+from ..utils.progress_meter import ProgressMeter
 
-from utils.avg_meter import AverageMeter
-from utils.progress_meter import ProgressMeter
 
+def validate_epoch(
+    val_loader: torch.nn.Module,
+    model: torch.nn.Module,
+    criterion: torch.optim.Optimizer,
+    args: argparse.Namespace,
+    epoch: int,
+) -> tuple:
+    """
+    Validates the model for one epoch on the validation dataset.
 
-def validate_epoch(val_loader, model, criterion, args, epoch):
+    Args:
+        val_loader (torch.nn.Module): DataLoader for the validation dataset.
+        model (torch.nn.Module): The model to be validated.
+        criterion (torch.optim.Optimizer): Loss function(s) used for validation.
+        args (argparse.Namespace): Command line arguments containing various settings.
+        epoch (int): The current epoch number.
+
+    Returns:
+        tuple: A tuple containing the average short answer accuracy and the average loss.
+    """
     batch_time = AverageMeter("Time", ":6.3f")
     losses = AverageMeter("Loss", ":.2e")
     mgat_losses = AverageMeter("MGat-Loss", ":.4e")
