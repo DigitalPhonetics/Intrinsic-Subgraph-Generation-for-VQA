@@ -1,9 +1,12 @@
 # Intrinsic Subgraph Generation for Interpretable Graph based Visual Question Answering
 
 ## Paper Links
+
+**Discrete Subgraph Sampling** \
 [![arXiv](https://img.shields.io/badge/arXiv-2412.08263-b31b1b.svg?style=flat)](https://arxiv.org/abs/2412.08263)
 [![Generic badge](https://img.shields.io/badge/COLING-Link-GREEN.svg)]()
 
+**Intrinsic Subgraph Generation** \
 [![arXiv](https://img.shields.io/badge/arXiv-2403.17647-b31b1b.svg?style=flat)](https://arxiv.org/abs/2403.17647)
 [![Generic badge](https://img.shields.io/badge/LREC_COLING-Link-GREEN.svg)](https://aclanthology.org/2024.lrec-main.806)
 
