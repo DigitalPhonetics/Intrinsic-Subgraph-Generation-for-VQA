@@ -1,8 +1,9 @@
 # Intrinsic Subgraph Generation for Interpretable Graph based Visual Question Answering
 
-Eval scripts coming soon.
-
 ## Paper Links
+[![arXiv](https://img.shields.io/badge/arXiv-2412.08263-b31b1b.svg?style=flat)](https://arxiv.org/abs/2412.08263)
+[![Generic badge](https://img.shields.io/badge/COLING-Link-GREEN.svg)]()
+
 [![arXiv](https://img.shields.io/badge/arXiv-2403.17647-b31b1b.svg?style=flat)](https://arxiv.org/abs/2403.17647)
 [![Generic badge](https://img.shields.io/badge/LREC_COLING-Link-GREEN.svg)](https://aclanthology.org/2024.lrec-main.806)
 
@@ -43,12 +44,21 @@ pip install -U spacy
 python -m spacy download en_core_web_sm
 ```
 
-## Citation
+## Citations
 ```bibtex
+@article{tilli2024discretesubgraphsamplinginterpretable,
+      title={Discrete Subgraph Sampling for Interpretable Graph based Visual Question Answering}, 
+      author={Pascal Tilli and Ngoc Thang Vu},
+      year={2024},
+      eprint={2412.08263},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2412.08263}, 
+}
+
 @inproceedings{tilli-vu-2024-intrinsic-subgraph,
     title = "Intrinsic Subgraph Generation for Interpretable Graph Based Visual Question Answering",
-    author = "Tilli, Pascal  and
-      Vu, Ngoc Thang",
+    author = "Tilli, Pascal  and Vu, Ngoc Thang",
     booktitle = "Proceedings of the 2024 Joint International Conference on Computational Linguistics, Language Resources and Evaluation (LREC-COLING 2024)",
     month = may,
     year = "2024",
@@ -58,3 +68,13 @@ python -m spacy download en_core_web_sm
     pages = "9204--9223",
 }
 ```
+
+## GitHub References
+**IMLE** \
+https://github.com/uclnlp/torch-imle
+
+**AIMLE** \
+https://github.com/EdinburghNLP/torch-adaptive-imle
+
+**Gumbel / Simple** \
+https://github.com/chendiqian/PR-MPNN/
