@@ -1,7 +1,8 @@
 import torch
-from .mgat_v2_conv import MaskingGATv2Conv
 import torch_geometric
-from utils.scatter_scaled_dot_product import scatter_scaled_dot_product_attention
+
+from ..utils.scatter_scaled_dot_product import scatter_scaled_dot_product_attention
+from .mgat_v2_conv import MaskingGATv2Conv
 
 
 class MGAT(torch.nn.Module):
@@ -19,6 +20,12 @@ class MGAT(torch.nn.Module):
         use_all_instrs: bool = False,
         use_global_mask: bool = False,
         node_classification: bool = False,
+        sampler_type: str = None,
+        sample_k: int = None,
+        nb_samples: int = 1,
+        alpha=1.0,
+        beta=10.0,
+        tau=1.0,
     ):
         super(MGAT, self).__init__()
         self.masking_thresholds = masking_thresholds
@@ -58,6 +65,12 @@ class MGAT(torch.nn.Module):
                     use_topk=use_topk,
                     concat_instr=concat_instr,
                     use_all_instrs=use_all_instrs,
+                    sampler_type=sampler_type,
+                    sample_k=sample_k,
+                    nb_samples=nb_samples,
+                    alpha=alpha,
+                    beta=beta,
+                    tau=tau,
                 )
                 for i in range(num_ins)
             ]

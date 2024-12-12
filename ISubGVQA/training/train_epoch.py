@@ -4,11 +4,12 @@ import math
 import time
 
 import torch
-from utils.avg_meter import AverageMeter
-from utils.progress_meter import ProgressMeter
 from torch.cuda.amp import autocast
-from utils.accuracies import accuracy
 from torch.nn.parallel import DistributedDataParallel
+
+from ..utils.accuracies import accuracy
+from ..utils.avg_meter import AverageMeter
+from ..utils.progress_meter import ProgressMeter
 
 
 def train_epoch(
@@ -124,16 +125,10 @@ def train_epoch(
         else:
             logging.info(f"loss is {loss.item()}")
 
-        ##################################
-        # measure elapsed time
-        ##################################
         batch_time.update(time.time() - end)
         end = time.time()
 
         if i % args.print_freq == 0 or i == len(train_loader) - 1:
             progress.display(i)
 
-    ##################################
-    # Give final score
-    ##################################
     progress.display(batch=len(train_loader))

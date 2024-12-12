@@ -1,33 +1,58 @@
 import torch
 import logging
-from datasets.gqa import GQADataset, gqa_collate
+from .gqa import GQADataset, gqa_collate
 import time
 
 
-def build_datasets(args):
+def build_datasets(
+    args=None,
+    ans2label_path="./ISubGVQA/meta_info/trainval_ans2label.json",
+    label2ans_path="./ISubGVQA/meta_info/trainval_label2ans.json",
+):
     logger = logging.getLogger("isubgvqa")
     logger.info("build datasets")
     start_time = time.time()
-    dataset_train = GQADataset(split="train")
+    dataset_train = GQADataset(
+        split="train", ans2label_path=ans2label_path, label2ans_path=label2ans_path
+    )
     logger.info(f"{(time.time() - start_time):.2f}s elapsed to load the train dataset")
     start_time = time.time()
-    dataset_valid = GQADataset(split="valid")
-    logger.info(f"{(time.time() - start_time):.2f}s elapsed to load the train dataset")
+    dataset_valid = GQADataset(
+        split="valid", ans2label_path=ans2label_path, label2ans_path=label2ans_path
+    )
+    logger.info(f"{(time.time() - start_time):.2f}s elapsed to load the valid dataset")
+    start_time = time.time()
+    dataset_testdev = GQADataset(
+        split="testdev", ans2label_path=ans2label_path, label2ans_path=label2ans_path
+    )
+    logger.info(
+        f"{(time.time() - start_time):.2f}s elapsed to load the testdev dataset"
+    )
+
     collate_fn = gqa_collate
 
     logger.info("build dataset samplers")
     if args.distributed:
         sampler_train = torch.utils.data.DistributedSampler(dataset_train, shuffle=True)
         sampler_valid = torch.utils.data.DistributedSampler(dataset_valid, shuffle=True)
+        sampler_testdev = torch.utils.data.DistributedSampler(
+            dataset_testdev, shuffle=True
+        )
     else:
         sampler_train = torch.utils.data.RandomSampler(dataset_train)
         sampler_valid = torch.utils.data.RandomSampler(dataset_valid)
+        sampler_testdev = torch.utils.data.RandomSampler(dataset_testdev)
 
     batch_sampler_train = torch.utils.data.BatchSampler(
         sampler_train, args.batch_size, drop_last=False
     )
     batch_sampler_valid = torch.utils.data.BatchSampler(
         sampler_valid,
+        args.batch_size * 4,
+        drop_last=False,
+    )
+    batch_sampler_testdev = torch.utils.data.BatchSampler(
+        sampler_testdev,
         args.batch_size * 4,
         drop_last=False,
     )
@@ -47,6 +72,17 @@ def build_datasets(args):
         pin_memory=True,
         batch_sampler=batch_sampler_valid,
     )
+    dataloader_testdev = torch.utils.data.DataLoader(
+        dataset_testdev,
+        collate_fn=collate_fn,
+        num_workers=args.num_workers,
+        pin_memory=True,
+        batch_sampler=batch_sampler_testdev,
+    )
 
-    datasets = {"train": dataloader_train, "dev": dataloader_valid}
+    datasets = {
+        "train": dataloader_train,
+        "dev": dataloader_valid,
+        "testdev": dataloader_testdev,
+    }
     return datasets

@@ -7,26 +7,30 @@ import warnings
 import torch
 import torch.distributed as dist
 import torch_geometric
-
-from torch.nn.parallel import DistributedDataParallel
-
+from ignite.handlers.param_scheduler import create_lr_scheduler_with_warmup
 from torch.cuda.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel
-from utils.misc import is_main_process
-from utils.arg_parser import get_argparser
-from datasets.build import build_datasets
-from utils.config import get_config
-
-from ignite.handlers.param_scheduler import create_lr_scheduler_with_warmup
 from torch.optim.lr_scheduler import ExponentialLR
 
-from models.build import build_model
-from training.train_loop import train
+from ISubGVQA.datasets.build import build_datasets
+from ISubGVQA.models.build import build_model
+from ISubGVQA.training.train_loop import train
+from ISubGVQA.utils.arg_parser import get_argparser
+from ISubGVQA.utils.config import get_config
+from ISubGVQA.utils.misc import is_main_process
+
+torch._dynamo.config.cache_size_limit = 64
+
+# https://arxiv.org/abs/2109.08203
+torch.manual_seed(3407)
 
 
 def main(args):
     print(f"torch version: {torch.__version__}")
     print(f"torch_geometric version: {torch_geometric.__version__}")
+    print(
+        f"os.environ['TOKENIZERS_PARALLELISM']={os.environ['TOKENIZERS_PARALLELISM']}"
+    )
 
     args.batch_size = args.batch_size * args.scale_factor
     args.lr = args.lr * args.scale_factor
@@ -70,31 +74,21 @@ def main(args):
         dist.barrier()
         torch.cuda.synchronize()
 
-    # optionally resume from a checkpoint
-    if args.resume:
-        if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
-            checkpoint = torch.load(args.resume)
-            model.load_state_dict(checkpoint["model"])
-            # args = checkpoint['args']
-            # if not args.evaluate:
-            #     if 'optimizer' in checkpoint:
-            #         optimizer.load_state_dict(checkpoint['optimizer'])
-            #     if 'lr_scheduler' in checkpoint:
-            #         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
-            #     if 'epoch' in checkpoint:
-            #         args.start_epoch = checkpoint['epoch'] + 1
-        else:
-            print("=> no checkpoint found at '{}'".format(args.resume))
-
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("number of params:", n_parameters)
 
-    optimizer = torch.optim.AdamW(
+    # optimizer = torch.optim.AdamW(
+    #     params=model.parameters(),
+    #     lr=args.lr,
+    #     weight_decay=1e-04,
+    #     # samsgrad=True,
+    # )
+
+    optimizer = torch.optim.Adam(
         params=model.parameters(),
         lr=args.lr,
-        weight_decay=1e-03,
-        amsgrad=True,
+        # weight_decay=1e-04,
+        # samsgrad=True,
     )
 
     gradscaler = GradScaler()
@@ -107,6 +101,23 @@ def main(args):
         warmup_end_value=args.lr,
         warmup_duration=10,
     )
+
+    # optionally resume from a checkpoint
+    if args.resume:
+        if os.path.isfile(args.resume):
+            print("=> loading checkpoint '{}'".format(args.resume))
+            checkpoint = torch.load(args.resume)
+            model.load_state_dict(checkpoint["model"])
+            args = checkpoint["args"]
+            if not args.evaluate:
+                if "optimizer" in checkpoint:
+                    optimizer.load_state_dict(checkpoint["optimizer"])
+                if "lr_scheduler" in checkpoint:
+                    lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+                if "epoch" in checkpoint:
+                    args.start_epoch = checkpoint["epoch"] + 1
+        else:
+            print("=> no checkpoint found at '{}'".format(args.resume))
 
     criterion = {
         "short_answer": torch.nn.CrossEntropyLoss().to(device=args.device),
@@ -121,7 +132,6 @@ def main(args):
         optimizer=optimizer,
         gradscaler=gradscaler,
         lr_scheduler=lr_scheduler,
-        sampler_train=None,
         save_model=True,
     )
     if args.distributed:
@@ -159,6 +169,7 @@ if __name__ == "__main__":
     # if "LOCAL_RANK" not in os.environ:
     #     os.environ["LOCAL_RANK"] = str(args.local_rank)
     print(f"Current Working Directory: {os.getcwd()}")
+    print(args)
     if args.output_dir:
         pathlib.Path(args.output_dir).mkdir(parents=True, exist_ok=True)
     main(args)

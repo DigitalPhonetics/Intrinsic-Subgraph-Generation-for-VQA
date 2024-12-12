@@ -5,16 +5,21 @@ def get_argparser():
     parser = argparse.ArgumentParser("ISubGVQA", add_help=False)
 
     #
-    parser.add_argument("--config", default="./configs/config_default.json")
+    parser.add_argument("--config", default="./ISubGVQA/configs/config_default.json")
     # parser.add_argument("--data", metavar="PATH", default="./", help="path to dataset")
     # parser.add_argument(
     #     "--save-dir", metavar="PATH", default="./", help="path to dataset"
     # )
     parser.add_argument("--mgat_layers", default=4, type=int, metavar="N")
     parser.add_argument("--log-name", default="gtsg.log", type=str, metavar="PATH")
-    parser.add_argument("--num_workers", default=24, type=int, metavar="N")
-    parser.add_argument("--epochs", default=300, type=int, metavar="N")
+    parser.add_argument("--num_workers", default=4, type=int, metavar="N")
+    parser.add_argument("--epochs", default=100, type=int, metavar="N")
     parser.add_argument("--start-epoch", default=0, type=int, metavar="N")
+    parser.add_argument("--nb_samples", default=1, type=int, metavar="N")
+    parser.add_argument("--alpha", default=1.0, type=float)
+    parser.add_argument("--beta", default=10.0, type=float)
+    parser.add_argument("--tau", default=1.0, type=float)
+
     parser.add_argument("--batch-size", default=256, type=int)
     parser.add_argument(
         "--lr",
@@ -82,7 +87,7 @@ def get_argparser():
         default="./outputdir",
         help="path where to save, empty for no saving",
     )
-    
+
     parser.add_argument("--gnn_gating", type=int, default=1)
     parser.add_argument("--use_instruction", type=int, default=1)
     parser.add_argument("--use_masking", type=int, default=1)
@@ -90,7 +95,7 @@ def get_argparser():
     parser.add_argument(
         "--mgat_masks", nargs="+", type=float, default=[1.0, 1.0, 1.0, 0.15]
     )
-    parser.add_argument("--use_topk", type=int, default=False)
+    parser.add_argument("--use_topk", type=int, default=True)
     parser.add_argument("--interpretable_mode", type=int, default=False)
     parser.add_argument("--experiment_name", type=str)
     parser.add_argument("--device", type=str, default="cuda")
@@ -103,8 +108,12 @@ def get_argparser():
     parser.add_argument("--use_all_instrs", action="store_true", default=False)
     parser.add_argument("--use_global_mask", action="store_true", default=False)
     parser.add_argument("--mask_regularization", action="store_true", default=False)
-    parser.add_argument("--pre_eval", action="store_true", default=True)
+    parser.add_argument("--pre_eval", action="store_true", default=False)
     parser.add_argument("--distributed", action="store_true", default=False)
+    parser.add_argument("--text_sampling", action="store_true", default=False)
+
+    parser.add_argument("--sampler_type", type=str)
+    parser.add_argument("--sample_k", type=int)
 
     parser.add_argument(
         "--launcher",

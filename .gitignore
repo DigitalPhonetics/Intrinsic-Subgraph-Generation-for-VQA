@@ -7,6 +7,10 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+*.pkl
+*.pdf
+*.png
+*.svg
 .Python
 build/
 develop-eggs/
@@ -165,3 +169,12 @@ cython_debug/
 *.pt
 *.pth
 data/
+
+# somefiles
+run_ensemble_exp.py
+run_deep_comparison.py
+analysis.ipynb
+demo.ipynb
+gradio_demo.py
+ISubGVQA/sampling/imle_v1
+ISubGVQA/sampling/imle_v2

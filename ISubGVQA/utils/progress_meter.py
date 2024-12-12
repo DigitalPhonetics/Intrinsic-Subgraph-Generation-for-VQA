@@ -1,5 +1,6 @@
-import utils.misc as utils
 import logging
+
+from ..utils.misc import is_main_process
 
 
 class ProgressMeter(object):
@@ -16,7 +17,7 @@ class ProgressMeter(object):
         ##################################
         # Save to logging
         ##################################
-        if utils.is_main_process():
+        if is_main_process():
             logging.info("\t".join(entries))
 
     def _get_batch_fmtstr(self, num_batches):

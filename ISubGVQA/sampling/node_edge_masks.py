@@ -2,7 +2,7 @@ import torch
 from torch_scatter import scatter
 
 
-class NodemaskToEdgemask(torch.autograd.Function):
+class NodeMaskToEdgeMask(torch.autograd.Function):
     @staticmethod
     def forward(ctx, mask, *args):
         edge_index, n_nodes = args

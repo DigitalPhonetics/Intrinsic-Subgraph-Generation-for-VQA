@@ -16,12 +16,21 @@ class GQASceneGraphs:
         self.vocab_sg, self.vectors = self.build_scene_graph_encoding_vocab()
         print(f"Scene graph vocab size: {len(self.vocab_sg)}")
 
-        scene_graphs_train = json.load(
-            open("./data/sceneGraphs/train_sceneGraphs.json")
+        self.scene_graphs_train = json.load(
+            open("./ISubGVQA/data/sceneGraphs/train_sceneGraphs.json")
         )
-        scene_graphs_valid = json.load(open("./data/sceneGraphs/val_sceneGraphs.json"))
+        self.scene_graphs_valid = json.load(
+            open("./ISubGVQA/data/sceneGraphs/val_sceneGraphs.json")
+        )
+        self.scene_graphs_testdev = json.load(
+            open("./ISubGVQA/data/sceneGraphs/scene_graphs_test_dev.json")
+        )
 
-        self.scene_graphs = scene_graphs_train | scene_graphs_valid
+        self.scene_graphs = (
+            self.scene_graphs_train
+            | self.scene_graphs_valid
+            | self.scene_graphs_testdev
+        )
 
         self.rel_mapping = {}
         self.obj_mapping = {}
@@ -109,13 +118,13 @@ class GQASceneGraphs:
             return lines
 
         tmp_text_list = []
-        tmp_text_list += load_str_list("./meta_info/name_gqa.txt")
-        tmp_text_list += load_str_list("./meta_info/attr_gqa.txt")
-        tmp_text_list += load_str_list("./meta_info/rel_gqa.txt")
+        tmp_text_list += load_str_list("./ISubGVQA/meta_info/name_gqa.txt")
+        tmp_text_list += load_str_list("./ISubGVQA/meta_info/attr_gqa.txt")
+        tmp_text_list += load_str_list("./ISubGVQA/meta_info/rel_gqa.txt")
 
-        objects_inv = json.load(open("./meta_info/objects.json"))
-        relations_inv = json.load(open("./meta_info/predicates.json"))
-        attributes_inv = json.load(open("./meta_info/attributes.json"))
+        objects_inv = json.load(open("./ISubGVQA/meta_info/objects.json"))
+        relations_inv = json.load(open("./ISubGVQA/meta_info/predicates.json"))
+        attributes_inv = json.load(open("./ISubGVQA/meta_info/attributes.json"))
 
         tmp_text_list += objects_inv + relations_inv + attributes_inv
         tmp_text_list.append("<self>")
@@ -123,9 +132,9 @@ class GQASceneGraphs:
         tmp_text_list = [tmp_text_list]
 
         sg_vocab_stoi = {token: i for i, token in enumerate(tmp_text_list[0])}
-        if os.path.exists("./data/vocabs/sg_vocab.pt"):
+        if os.path.exists("./ISubGVQA/data/vocabs/sg_vocab.pt"):
             print("loading scene graph vocab...")
-            sg_vocab = torch.load("./data/vocabs/sg_vocab.pt")
+            sg_vocab = torch.load("./ISubGVQA/data/vocabs/sg_vocab.pt")
         else:
             print("creating scene graph vocab...")
             sg_vocab = vocab(
@@ -139,7 +148,7 @@ class GQASceneGraphs:
                 ],
             )
             print("saving text vocab...")
-            torch.save(sg_vocab, "./data/vocabs/sg_vocab.pt")
+            torch.save(sg_vocab, "./ISubGVQA/data/vocabs/sg_vocab.pt")
 
         myvec = GloVe(name="6B", dim=300)
         vectors = torch.randn((len(sg_vocab.vocab.itos_), 300))
@@ -244,7 +253,7 @@ class GQASceneGraphs:
 
             # should have no error
             obj_name = self.obj_mapping.get(obj["name"], obj["name"])
-            object_token_arr[0] = self.vocab_sg.get_stoi()[obj_name]
+            object_token_arr[0] = self.vocab_sg.get_stoi().get(obj_name, 1)
             # assert object_token_arr[0] !=0 , obj
             if object_token_arr[0] == 0:
                 # print("Out Of Vocabulary Object:", obj['name'])
@@ -255,7 +264,7 @@ class GQASceneGraphs:
                 if counter >= 3:
                     break
                 attr = self.attr_mapping.get(attr, attr)
-                object_token_arr[attr_idx + 1] = self.vocab_sg.get_stoi()[attr]
+                object_token_arr[attr_idx + 1] = self.vocab_sg.get_stoi().get(attr, 1)
                 counter += 1
 
             obj_bbox = [
@@ -297,7 +306,7 @@ class GQASceneGraphs:
                 rel_name = self.rel_mapping.get(rel["name"], rel["name"])
 
                 edge_token_arr = np.array(
-                    [self.vocab_sg.get_stoi()[rel_name]], dtype=np.int_
+                    [self.vocab_sg.get_stoi().get(rel_name, 1)], dtype=np.int_
                 )
                 edge_feature_list.append(edge_token_arr)
 
