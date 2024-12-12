@@ -21,6 +21,35 @@ from ..utils.topk import topk
 
 
 class MaskingModel(torch.nn.Module):
+    """
+    A PyTorch module for masking nodes in a graph based on various sampling methods.
+    Args:
+        dim_nodes (int): Dimension of node features.
+        dim_questions (int): Dimension of question features.
+        masking_threshold (float, optional): Threshold for masking. Defaults to 0.3.
+        use_topk (bool, optional): Whether to use top-k pooling. Defaults to False.
+        sample_k (int, optional): Number of samples for the sampler. Defaults to None.
+        sampler_type (str, optional): Type of sampler to use ('imle', 'aimle', 'simple', 'gumbel'). Defaults to None.
+        nb_samples (int, optional): Number of samples for I-MLE samplers. Defaults to 1.
+        alpha (float, optional): Alpha parameter for I-MLE samplers. Defaults to 1.0.
+        beta (float, optional): Beta parameter for I-MLE samplers. Defaults to 10.0.
+        tau (float, optional): Tau parameter for I-MLE samplers. Defaults to 1.0.
+    Methods:
+        reset_parameters():
+            Resets the parameters of the neural networks.
+        forward(x, u, batch, edge_index, size=None, use_all_instrs=True):
+            Forward pass of the model.
+            Args:
+                x (Tensor): Node features.
+                u (Tensor): Question features.
+                batch (Tensor): Batch indices.
+                edge_index (Tensor): Edge indices.
+                size (int, optional): Size of the batch. Defaults to None.
+                use_all_instrs (bool, optional): Whether to use all instructions. Defaults to True.
+            Returns:
+                Tensor: Masked node features.
+    """
+
     def __init__(
         self,
         dim_nodes,
@@ -35,9 +64,6 @@ class MaskingModel(torch.nn.Module):
         tau=1.0,
     ):
         super(MaskingModel, self).__init__()
-        # self.gate_nn = Seq(Linear(channels, channels), GELU(), Linear(channels, 1))
-        # self.node_nn = Seq(Linear(num_node_features, channels), GELU(), Linear(channels, channels))
-        # self.ques_nn = Seq(Linear(channels, channels), GELU(), Linear(channels, channels))
         self.use_topk = use_topk
         self.sample_k = sample_k
         self.sampler_type = sampler_type
@@ -131,22 +157,6 @@ class MaskingModel(torch.nn.Module):
         # gate = torch_geometric.utils.softmax(gate, batch.cuda(), num_nodes=size)
         if self.use_topk:
             gate = F.dropout(gate, p=0.2, training=self.training)
-
-            # imle_solver = imle(
-            #     topk_sampling,
-            #     target_distribution=TargetDistribution(alpha=0.0, beta=10.0),
-            #     noise_distribution=SumOfGammaNoiseDistribution(k=3, nb_iterations=100),
-            #     nb_samples=1,
-            #     input_noise_temperature=1.0,
-            #     target_noise_temperature=1.0,
-            # )
-            # gate = imle_solver(
-            #     gate,
-            #     self.masking_threshold,
-            #     batch,
-            #     edge_index,
-            #     torch.tensor(gate.shape[0]),
-            # )
 
             # num_nodes = scatter_add(batch.new_ones(x.size(0)), batch, dim=0)
             gate, mask = to_dense_batch(gate, batch)

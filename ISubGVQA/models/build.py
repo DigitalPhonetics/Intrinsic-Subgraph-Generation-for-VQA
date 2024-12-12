@@ -2,6 +2,14 @@ from .isubgvqa import ISubGVQA
 
 
 def build_model(args, cfg):
+    """
+    Build and initialize the ISubGVQA model with the given arguments and configuration.
+    Args:
+        args (Namespace): A namespace object containing the arguments for model initialization.
+        cfg (dict): A dictionary containing the configuration settings.
+    Returns:
+        ISubGVQA: An instance of the ISubGVQA model initialized with the specified parameters.
+    """
 
     model = ISubGVQA(
         args,

@@ -8,6 +8,41 @@ import os
 
 
 class GQASceneGraphs:
+    """
+    A class to handle GQA Scene Graphs for Visual Question Answering (VQA).
+    Attributes:
+    -----------
+    tokenizer : spacy.tokenizer
+        Tokenizer for processing text data.
+    vocab_sg : torchtext.vocab.Vocab
+        Vocabulary for scene graph encoding.
+    vectors : torch.Tensor
+        Pre-trained GloVe vectors for the vocabulary.
+    scene_graphs_train : dict
+        Scene graphs for the training set.
+    scene_graphs_valid : dict
+        Scene graphs for the validation set.
+    scene_graphs_testdev : dict
+        Scene graphs for the test development set.
+    scene_graphs : dict
+        Combined scene graphs from training, validation, and test development sets.
+    rel_mapping : dict
+        Mapping for relationships.
+    obj_mapping : dict
+        Mapping for objects.
+    attr_mapping : dict
+        Mapping for attributes.
+    Methods:
+    --------
+    __init__():
+        Initializes the GQASceneGraphs object, builds the vocabulary, and loads scene graphs.
+    query_and_translate(queryID: str):
+        Queries and translates a scene graph based on the given query ID.
+    build_scene_graph_encoding_vocab():
+        Builds the vocabulary for scene graph encoding using pre-defined text lists and GloVe vectors.
+    convert_one_gqa_scene_graph(sg_this: dict):
+        Converts a single GQA scene graph into a PyTorch Geometric data format.
+    """
 
     tokenizer = get_tokenizer("spacy", language="en_core_web_sm")
 
@@ -37,9 +72,6 @@ class GQASceneGraphs:
         self.attr_mapping = {}
 
     def query_and_translate(self, queryID: str):
-        ##################################
-        # handle scene graph part
-        ##################################
         empty_sg = {
             "objects": {
                 "0": {
@@ -165,9 +197,6 @@ class GQASceneGraphs:
         return sg_vocab, vectors
 
     def convert_one_gqa_scene_graph(self, sg_this):
-        ##################################
-        # Make sure that it is not an empty graph
-        ##################################
         # assert len(sg_this['objects'].keys()) != 0, sg_this
         if len(sg_this["objects"].keys()) == 0:
             # only in val
@@ -277,25 +306,11 @@ class GQASceneGraphs:
             node_feature_list.append(object_token_arr)
             bbox_coordinates.append(obj_bbox)
 
-            ##################################
-            # Need to Add a self-looping edge
-            ##################################
             edge_topology_list.append([node_idx, node_idx])  # [from self, to self]
             edge_token_arr = np.array(
                 [self.vocab_sg.get_stoi()["<self>"]], dtype=np.int_
             )
             edge_feature_list.append(edge_token_arr)
-
-            ##################################
-            # Encode Edge
-            # - Edge Feature: edge label (name)
-            # - Edge Topology: adjacency matrix
-            # GQA relations [dict]  A list of all outgoing relations (edges) from the object (source).
-            ##################################
-
-            ##################################
-            # Comment out the whole for loop to see the importance of attributes
-            ##################################
 
             for rel in obj["relations"]:
                 # [from self as source, to outgoing]
@@ -310,11 +325,7 @@ class GQASceneGraphs:
                 )
                 edge_feature_list.append(edge_token_arr)
 
-                ##################################
                 # Symmetric
-                # - If there is no symmetric edge, add one.
-                # - Should add mechanism to check duplicates
-                ##################################
                 if (
                     map_objID_to_node_idx[rel["object"]],
                     node_idx,

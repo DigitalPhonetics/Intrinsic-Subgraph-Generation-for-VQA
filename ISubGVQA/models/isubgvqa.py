@@ -15,6 +15,74 @@ from ..sampling.methods.simple_scheme import EdgeSIMPLEBatched
 
 
 class ISubGVQA(torch.nn.Module):
+    """
+    ISubGVQA is a PyTorch neural network module designed for Visual Question Answering (VQA) tasks.
+    It integrates various components such as scene graph encoding, question encoding, and multi-head
+    graph attention networks to process and interpret visual and textual data.
+    Args:
+        args (Namespace): Configuration arguments.
+        use_imle (bool, optional): Flag to use IMLE. Defaults to False.
+        use_masking (bool, optional): Flag to use masking. Defaults to True.
+        use_instruction (bool, optional): Flag to use instruction. Defaults to True.
+        use_mgat (bool, optional): Flag to use multi-head graph attention. Defaults to False.
+        mgat_masks (optional): Masks for MGAT. Defaults to None.
+        use_topk (bool, optional): Flag to use top-k sampling. Defaults to False.
+        interpretable_mode (bool, optional): Flag for interpretable mode. Defaults to True.
+        concat_instr (bool, optional): Flag to concatenate instructions. Defaults to False.
+        embed_cat (bool, optional): Flag to embed categories. Defaults to True.
+    Attributes:
+        args (Namespace): Configuration arguments.
+        n_train_steps (int): Number of training steps.
+        n_valid_steps (int): Number of validation steps.
+        use_imle (bool): Flag to use IMLE.
+        use_instruction (bool): Flag to use instruction.
+        use_masking (bool): Flag to use masking.
+        use_mgat (bool): Flag to use multi-head graph attention.
+        interpretable_mode (bool): Flag for interpretable mode.
+        concat_instr (bool): Flag to concatenate instructions.
+        embed_cat (bool): Flag to embed categories.
+        text_sampling (bool): Flag for text sampling.
+        general_hidden_dim (int): General hidden dimension size.
+        scene_graph_encoder (SceneGraphEncoder): Scene graph encoder module.
+        text_emb_dim (int): Text embedding dimension size.
+        text_vocab_embedding (torch.nn.Embedding): Text vocabulary embedding.
+        question_hidden_dim (int): Question hidden dimension size.
+        question_encoder (QuestionEncoder): Question encoder module.
+        text_sampler (EdgeSIMPLEBatched, optional): Text sampler module.
+        qsts_att_keys (torch.nn.Sequential, optional): Attention keys for questions.
+        qsts_att_query (torch.nn.Sequential, optional): Attention query for questions.
+        program_decoder (QuestionDecoder): Program decoder module.
+        gat_seq (MGAT): Multi-head graph attention module.
+        graph_global_attention_pooling (GlobalAttention): Global attention pooling layer.
+        qsts_reduction (torch.nn.Sequential): Question reduction layer.
+        instr_reduction (torch.nn.Sequential): Instruction reduction layer.
+        embedding (torch.nn.Sequential): Embedding layer.
+        logit_fc (torch.nn.Linear): Final classification layer.
+    Methods:
+        forward(node_embeddings, edge_index, edge_embeddings, batch, questions, qsts_att_mask,
+                return_masks=False, explainer=False, explainer_stage=False, expl_bypass_x=False,
+                scene_graphs=None):
+            Forward pass of the model.
+            Args:
+                node_embeddings (torch.Tensor): Node embeddings.
+                edge_index (torch.Tensor): Edge indices.
+                edge_embeddings (torch.Tensor): Edge embeddings.
+                batch (torch.Tensor): Batch indices.
+                questions (torch.Tensor): Encoded questions.
+                qsts_att_mask (torch.Tensor): Attention mask for questions.
+                return_masks (bool, optional): Flag to return masks. Defaults to False.
+                explainer (bool, optional): Flag for explainer mode. Defaults to False.
+                explainer_stage (bool, optional): Stage for explainer. Defaults to False.
+                expl_bypass_x (bool, optional): Bypass for explainer. Defaults to False.
+                scene_graphs (optional): Scene graphs. Defaults to None.
+            Returns:
+                torch.Tensor: Model logits.
+                torch.Tensor: IMLE mask.
+                torch.Tensor: MGAT gate.
+                torch.Tensor: Node logits layers.
+                torch.Tensor: Mask text.
+    """
+
     def __init__(
         self,
         args,
@@ -47,20 +115,6 @@ class ISubGVQA(torch.nn.Module):
         )
 
         self.text_emb_dim = 512
-        # self.text_vocab = copy.deepcopy(GQADataset.text_vocab)
-        # myvec = GloVe(name="6B", dim=300)
-        # vectors = torch.randn((len(self.text_vocab.vocab.itos_), 300))
-
-        # for i, token in enumerate(self.text_vocab.vocab.itos_):
-        #     glove_idx = myvec.stoi.get(token)
-        #     if glove_idx:
-        #         vectors[i] = myvec.vectors[glove_idx]
-
-        # sg_pad_idx = self.text_vocab.vocab.itos_.index("<pad>")
-        # self.text_vocab_embedding = torch.nn.Embedding(
-        #     len(self.text_vocab.vocab), self.text_emb_dim, padding_idx=sg_pad_idx
-        # )
-        # self.text_vocab_embedding.weight.data.copy_(vectors)
 
         clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         self.text_vocab_embedding = copy.deepcopy(clip_model.text_model.embeddings)
@@ -121,9 +175,6 @@ class ISubGVQA(torch.nn.Module):
             tau=args.tau,
         )
 
-        ##################################
-        # Build Neural Execution Module Pooling Layer
-        ##################################
         self.graph_global_attention_pooling = GlobalAttention(
             num_node_features=self.question_hidden_dim,
             num_out_features=self.question_hidden_dim,
@@ -173,10 +224,6 @@ class ISubGVQA(torch.nn.Module):
         expl_bypass_x=False,
         scene_graphs=None,
     ):
-        ##################################
-        # Encode questions
-        ##################################
-        # [ Len, Batch ] -> [ Len, Batch, self.question_hidden_dim ]
         mask_text = None
         questions_encoded = self.question_encoder(questions, mask=qsts_att_mask)
         if self.text_sampling:

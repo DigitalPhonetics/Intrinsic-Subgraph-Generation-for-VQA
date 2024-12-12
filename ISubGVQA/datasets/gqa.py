@@ -14,6 +14,18 @@ from .scene_graph import GQASceneGraphs
 
 
 def build_text_vocab(tokenizer):
+    """
+    Builds a vocabulary from the questions in the training and validation datasets.
+    Args:
+        tokenizer (callable): A function or callable object that takes a string and returns a list of tokens.
+    Returns:
+        vocab: A vocabulary object containing the unique tokens from the questions, with special tokens added.
+    Raises:
+        AssertionError: If a token in the questions is not found in the vocabulary.
+    Special tokens:
+        ("<unk>", "<pad>", "<sos>", "<eos>", "<self>") are added to the vocabulary.
+    """
+
     sg_train = json.load(open("./data/questions/train_balanced_questions.json"))
     sg_val = json.load(open("./data/questions/val_balanced_questions.json"))
     data = sg_train | sg_val
@@ -41,6 +53,29 @@ def build_text_vocab(tokenizer):
 
 
 class GQADataset(torch.utils.data.Dataset):
+    """
+    A custom dataset class for the GQA (Graph Question Answering) dataset.
+    Attributes:
+        tokenizer (CLIPTokenizerFast): Tokenizer for processing text data.
+        ans2label (dict): Dictionary mapping answers to labels.
+        label2ans (dict): Dictionary mapping labels to answers.
+        split (str): The dataset split, one of 'train', 'valid', or 'testdev'.
+        sg_feature_lookup (GQASceneGraphs): Lookup for scene graph features.
+        data (dict): Loaded question data for the specified split.
+        idx2sampleId (list): List of sample IDs.
+        sg_cache (dict): Cache for scene graphs.
+    Methods:
+        __init__(split, ans2label_path, label2ans_path):
+            Initializes the dataset with the specified split and paths to answer-label mappings.
+        __getitem__(idx):
+            Retrieves the data sample at the specified index.
+        __len__():
+            Returns the total number of data samples.
+        num_answers():
+            Returns the number of unique answers in the dataset.
+        indices_to_string(indices, words=False):
+            Converts word indices to a sentence string.
+    """
 
     # tokenizer = get_tokenizer("spacy", language="en_core_web_sm")
     tokenizer = CLIPTokenizerFast.from_pretrained(

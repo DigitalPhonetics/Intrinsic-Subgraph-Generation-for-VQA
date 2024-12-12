@@ -25,7 +25,26 @@ torch._dynamo.config.cache_size_limit = 64
 torch.manual_seed(3407)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
+    """
+    Main function to run the training and evaluation pipeline.
+    Args:
+        args (Namespace): Arguments and hyperparameters for the training and evaluation process.
+    Initializes:
+        - Logging configuration if output directory is specified and process is main
+        - Distributed training setup if specified
+        - Configuration, datasets, samplers, and dataloaders
+        - Model and wraps it with DistributedDataParallel if distributed training is specified
+        - Optimizer, gradient scaler, and learning rate scheduler
+    Optionally resumes from a checkpoint if specified.
+    Defines:
+        - Loss criteria for short answer and node classification tasks
+    Calls the train function with the initialized components.
+    Cleans up distributed training setup if specified.
+    Returns:
+        None
+    """
+
     print(f"torch version: {torch.__version__}")
     print(f"torch_geometric version: {torch_geometric.__version__}")
     print(
