@@ -1,3 +1,4 @@
+bluepy
 dotwiz==0.4.0
 gradio==5.8.0
 joblib==1.4.0
