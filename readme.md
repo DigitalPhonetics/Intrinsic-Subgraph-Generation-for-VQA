@@ -10,6 +10,9 @@
 ## Approach
 ![Architecture](./Architecture.jpg)
 
+## Documentation
+[Documentation](https://intrinsic-subgraph-generation-for-interpretable-graph-based-vis.readthedocs.io/en/latest/index.html)
+
 ## Installation
 ### Python Environment
 Create a virtual python environment with e.g. conda:
