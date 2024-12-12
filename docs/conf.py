@@ -8,11 +8,12 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../ISubGVQA"))
+sys.path.insert(0, os.path.abspath("../../ISubGVQA/"))
 
 project = "Intrinsic Subgraph Generation for interpretable VQA"
 copyright = "2024, Pascal Tilli"
 author = "Pascal Tilli"
+release = "2024"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
