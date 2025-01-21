@@ -4,7 +4,7 @@
 
 **Discrete Subgraph Sampling** \
 [![arXiv](https://img.shields.io/badge/arXiv-2412.08263-b31b1b.svg?style=flat)](https://arxiv.org/abs/2412.08263)
-[![Generic badge](https://img.shields.io/badge/COLING-Link-GREEN.svg)]()
+[![Generic badge](https://img.shields.io/badge/COLING-Link-GREEN.svg)](https://aclanthology.org/2025.coling-main.167/)
 
 **Intrinsic Subgraph Generation** \
 [![arXiv](https://img.shields.io/badge/arXiv-2403.17647-b31b1b.svg?style=flat)](https://arxiv.org/abs/2403.17647)
@@ -52,14 +52,16 @@ python -m spacy download en_core_web_sm
 
 ## Citations
 ```bibtex
-@article{tilli2024discretesubgraphsamplinginterpretable,
-      title={Discrete Subgraph Sampling for Interpretable Graph based Visual Question Answering}, 
-      author={Pascal Tilli and Ngoc Thang Vu},
-      year={2024},
-      eprint={2412.08263},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2412.08263}, 
+@inproceedings{tilli-vu-2025-discrete,
+    title = "Discrete Subgraph Sampling for Interpretable Graph based Visual Question Answering",
+    author = "Tilli, Pascal  and Vu, Ngoc Thang",
+    booktitle = "Proceedings of the 31st International Conference on Computational Linguistics",
+    month = jan,
+    year = "2025",
+    address = "Abu Dhabi, UAE",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.coling-main.167/",
+    pages = "2445--2455"
 }
 
 @inproceedings{tilli-vu-2024-intrinsic-subgraph,
